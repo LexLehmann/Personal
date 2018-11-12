@@ -1,0 +1,41 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+
+public class Marriage {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		try(BufferedReader bR = new BufferedReader(new FileReader("map.txt"))) {
+			int numVertices;
+			String line;
+			String[] info;
+			int lukeStart, lukeEnd, lorelaiStart, lorelaiEnd;
+			
+			
+			line = bR.readLine();
+			numVertices = Integer.parseInt(line);
+			
+			line = bR.readLine();
+			info = line.split(" ");
+			lukeStart = Integer.parseInt(info[0]);
+			lukeEnd = Integer.parseInt(info[0]);
+			
+			line = bR.readLine();
+			info = line.split(" ");
+			lorelaiStart = Integer.parseInt(info[0]);
+			lorelaiEnd = Integer.parseInt(info[0]);
+			
+			for (int i = 0; i < numVertices; i++) {
+				line = bR.readLine();
+				info = line.split(" ");
+				for (int j  = 0; j < line.length(); j++) {
+					
+				}
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			System.err.println("Error");
+		}
+	}
+
+}
