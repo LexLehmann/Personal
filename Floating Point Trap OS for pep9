@@ -1,0 +1,703 @@
+;******* Pep/9 Operating System, 2015/05/17 
+;
+TRUE:    .EQUATE 1
+FALSE:   .EQUATE 0
+;
+;******* Operating system RAM
+osRAM:   .BLOCK  128         ;System stack area
+wordTemp:.BLOCK  1           ;Temporary word storage
+byteTemp:.BLOCK  1           ;Least significant byte of wordTemp
+addrMask:.BLOCK  2           ;Addressing mode mask
+opAddr:  .BLOCK  2           ;Trap instruction operand address
+charIn:  .BLOCK  1           ;Memory-mapped input device
+charOut: .BLOCK  1           ;Memory-mapped output device
+;
+;******* Operating system ROM
+         .BURN   0xFFFF
+;
+;******* System Loader
+;Data must be in the following format:
+;Each hex number representing a byte must contain exactly two
+;characters. Each character must be in 0..9, A..F, or a..f and
+;must be followed by exactly one space. There must be no
+;leading spaces at the beginning of a line and no trailing
+;spaces at the end of a line. The last two characters in the
+;file must be lowercase zz, which is used as the terminating
+;sentinel by the loader.
+;
+loader:  LDWX    0,i         ;X <- 0
+;
+getChar: LDBA    charIn,d    ;Get first hex character
+         CPBA    'z',i       ;If end of file sentinel 'z'
+         BREQ    stopLoad    ;  then exit loader routine
+         CPBA    '9',i       ;If characer <= '9', assume decimal
+         BRLE    shift       ;  and right nybble is correct digit
+         ADDA    9,i         ;else convert nybble to correct digit
+shift:   ASLA                ;Shift left by four bits to send
+         ASLA                ;  the digit to the most significant
+         ASLA                ;  position in the byte
+         ASLA
+         STBA    byteTemp,d  ;Save the most significant nybble
+         LDBA    charIn,d    ;Get second hex character
+         CPBA    '9',i       ;If characer <= '9', assume decimal
+         BRLE    combine     ;  and right nybble is correct digit
+         ADDA    9,i         ;else convert nybble to correct digit
+combine: ANDA    0x000F,i    ;Mask out the left nybble
+         ORA     wordTemp,d  ;Combine both hex digits in binary
+         STBA    0,x         ;Store in Mem[X]
+         ADDX    1,i         ;X <- X + 1
+         LDBA    charIn,d    ;Skip blank or <LF>
+         BR      getChar     ;
+;
+stopLoad:STOP                ;
+;
+;******* Trap handler
+oldIR:   .EQUATE 9           ;Stack address of IR on trap
+;
+trap:    LDBX    oldIR,s     ;X <- trapped IR
+         CPBX    0x0028,i    ;If X >= first nonunary trap opcode
+         BRGE    nonUnary    ;  trap opcode is nonunary
+;
+unary:   ANDX    0x0001,i    ;Mask out all but rightmost bit
+         ASLX                ;Two bytes per address
+         CALL    unaryJT,x   ;Call unary trap routine
+         RETTR               ;Return from trap
+;
+unaryJT: .ADDRSS opcode26    ;Address of NOP0 subroutine
+         .ADDRSS opcode27    ;Address of NOP1 subroutine
+;
+nonUnary:ASRX                ;Trap opcode is nonunary
+         ASRX                ;Discard addressing mode bits
+         ASRX
+         SUBX    5,i         ;Adjust so that NOP opcode = 0
+         ASLX                ;Two bytes per address
+         CALL    nonUnJT,x   ;Call nonunary trap routine
+return:  RETTR               ;Return from trap
+;
+nonUnJT: .ADDRSS opcode28    ;Address of NOP subroutine
+         .ADDRSS opcode30    ;Address of DECI subroutine
+         .ADDRSS opcode38    ;Address of DECO subroutine
+         .ADDRSS opcode40    ;Address of HEXO subroutine
+         .ADDRSS opcode48    ;Address of STRO subroutine
+;
+;******* Assert valid trap addressing mode
+oldIR4:  .EQUATE 13          ;oldIR + 4 with two return addresses
+assertAd:LDBA    1,i         ;A <- 1
+         LDBX    oldIR4,s    ;X <- OldIR
+         ANDX    0x0007,i    ;Keep only the addressing mode bits
+         BREQ    testAd      ;000 = immediate addressing
+loop:    ASLA                ;Shift the 1 bit left
+         SUBX    1,i         ;Subtract from addressing mode count
+         BRNE    loop        ;Try next addressing mode
+testAd:  ANDA    addrMask,d  ;AND the 1 bit with legal modes
+         BREQ    addrErr
+         RET                 ;Legal addressing mode, return
+addrErr: LDBA    '\n',i
+         STBA    charOut,d
+         LDWA    trapMsg,i   ;Push address of error message
+         STWA    -2,s
+         SUBSP   2,i         ;Call print subroutine
+         CALL    prntMsg
+         STOP                ;Halt: Fatal runtime error
+trapMsg: .ASCII  "ERROR: Invalid trap addressing mode.\x00"
+;
+;******* Set address of trap operand
+oldX4:   .EQUATE 7           ;oldX + 4 with two return addresses
+oldPC4:  .EQUATE 9           ;oldPC + 4 with two return addresses
+oldSP4:  .EQUATE 11          ;oldSP + 4 with two return addresses
+setAddr: LDBX    oldIR4,s    ;X <- old instruction register
+         ANDX    0x0007,i    ;Keep only the addressing mode bits
+         ASLX                ;Two bytes per address
+         BR      addrJT,x
+addrJT:  .ADDRSS addrI       ;Immediate addressing
+         .ADDRSS addrD       ;Direct addressing
+         .ADDRSS addrN       ;Indirect addressing
+         .ADDRSS addrS       ;Stack-relative addressing
+         .ADDRSS addrSF      ;Stack-relative deferred addressing
+         .ADDRSS addrX       ;Indexed addressing
+         .ADDRSS addrSX      ;Stack-indexed addressing
+         .ADDRSS addrSFX     ;Stack-deferred indexed addressing
+;
+addrI:   LDWX    oldPC4,s    ;Immediate addressing
+         SUBX    2,i         ;Oprnd = OprndSpec
+         STWX    opAddr,d
+         RET
+;
+addrD:   LDWX    oldPC4,s    ;Direct addressing
+         SUBX    2,i         ;Oprnd = Mem[OprndSpec]
+         LDWX    0,x
+         STWX    opAddr,d
+         RET
+;
+addrN:   LDWX    oldPC4,s    ;Indirect addressing
+         SUBX    2,i         ;Oprnd = Mem[Mem[OprndSpec]]
+         LDWX    0,x
+         LDWX    0,x
+         STWX    opAddr,d
+         RET
+;
+addrS:   LDWX    oldPC4,s    ;Stack-relative addressing
+         SUBX    2,i         ;Oprnd = Mem[SP + OprndSpec]
+         LDWX    0,x
+         ADDX    oldSP4,s
+         STWX    opAddr,d
+         RET
+;
+addrSF:  LDWX    oldPC4,s    ;Stack-relative deferred addressing
+         SUBX    2,i         ;Oprnd = Mem[Mem[SP + OprndSpec]]
+         LDWX    0,x
+         ADDX    oldSP4,s
+         LDWX    0,x
+         STWX    opAddr,d
+         RET
+;
+addrX:   LDWX    oldPC4,s    ;Indexed addressing
+         SUBX    2,i         ;Oprnd = Mem[OprndSpec + X]
+         LDWX    0,x
+         ADDX    oldX4,s
+         STWX    opAddr,d
+         RET
+;
+addrSX:  LDWX    oldPC4,s    ;Stack-indexed addressing
+         SUBX    2,i         ;Oprnd = Mem[SP + OprndSpec + X]
+         LDWX    0,x
+         ADDX    oldX4,s
+         ADDX    oldSP4,s
+         STWX    opAddr,d
+         RET
+;
+addrSFX: LDWX    oldPC4,s    ;Stack-deferred indexed addressing
+         SUBX    2,i         ;Oprnd = Mem[Mem[SP + OprndSpec] + X]
+         LDWX    0,x
+         ADDX    oldSP4,s
+         LDWX    0,x
+         ADDX    oldX4,s
+         STWX    opAddr,d
+         RET
+;
+;******* Opcode 0x26
+;The NOP0 instruction.
+opcode26:RET
+;
+;******* Opcode 0x27
+;The NOP1 instruction.
+opcode27:RET
+;
+;******* Opcode 0x28
+;The NOP instruction.
+total:   .EQUATE 0
+sign1:   .EQUATE 2
+sign2:   .EQUATE 3
+expon1:  .EQUATE 4
+expon2:  .EQUATE 5
+signif1: .EQUATE 6
+signif2: .EQUATE 8
+oldNZVCA:.EQUATE 12
+acumVal: .EQUATE 13 
+opcode28:LDWA    0x00FF,i    ;Assert i
+         STWA    addrMask,d
+         CALL    assertAd
+         CALL    setAddr
+         SUBSP   10,i
+         LDWA    opAddr,n    ;store the sign bit of the op
+         ANDA    0x8000,i    
+         STWA    sign1,s
+         LDWA    acumVal,s   ;store the sign bit of the acum
+         ANDA    0x8000,i
+         STWA    sign2,s
+         LDWA    opAddr,n    ;store the exponant bit of the op
+         ANDA    0x7E00,i
+         ASRA
+         CPWA    0x3F00,i 
+         BREQ    addFail     ;break program if expon is inf (don't want inf+inf=0)
+         STWA    expon1,s
+         LDWA    acumVal,s   ;store the exponant bit of the acum
+         ANDA    0x7E00,i
+         ASRA
+         CPWA    0x3F00,i
+         BREQ    addFail     ;break program if exponat is inf
+         STWA    expon2,s
+         LDWA    opAddr,n    ;store the significand bit of the acum
+         ANDA    0x01FF,i
+         LDBX    expon1,s
+         BREQ    hidden01    ;skip adding the hidden bit if it is a denormalized number 
+         ORA     0x0200,i    ;add hidden bit
+hidden01:STWA    signif1,s   ;store signnificand
+         LDWA    acumVal,s   ;get the sigfiicand of the acum
+         ANDA    0x01FF,i
+         LDBX    expon2,s
+         BREQ    hidden02    ;skip adding the hidden bit if the number is denormalized
+         ORA     0x0200,i    ;add the hidden bit
+hidden02:STWA    signif2,s
+;
+         LDWA    signif1,s
+         LDBX    expon1,s    
+shift1:  CPBX    expon2,s    ;if expon2 is larger than than expon1
+         BRGE    stShift1
+         ADDX    1,i         ;add 1 to expon1
+         ASRA                ;shift significand1 so it is a 1 power smaller  
+         BR      shift1      ;repeat while loop
+
+stShift1:STWA    signif1,s
+         STBX    expon1,s
+         LDWA    signif2,s   ;do the same thing for the other expon
+         LDBX    expon2,s    ;at the end of the the expons will be the same
+shift2:  CPBX    expon1,s    ;and the significands will be properly shifted
+         BRGE    stShift2    
+         ADDX    1,i
+         ASRA
+         BR      shift2
+
+stShift2:STWA    signif2,s
+         STBX    expon2,s
+         
+         LDWA    sign1,s     ;check if the numbers have the same sign
+         ADDA    sign2,s     ;add them together either they are both 0s and the front bit is 0
+         BRLT    addNeg      ;or 1 is a 1 and it stays as a 1 in front or they are both 1s and the 1 carries out
+         
+         LDBA    0x00,i
+         STBA    sign2,s 
+         LDWA    signif1,s
+         ADDA    signif2,s   ;add the significands
+         CPWA    0x03FF,i    ;check if they carried
+         BRLE    together
+         ASRA
+         LDBX    expon1,s    ;if they did raise the expon and shift the number smaller
+         ADDX    1,i
+         STBX    expon1,s
+         BR      together    ;branch to where the numbers are put together
+
+addNeg:  LDWX     0x0000,i   ;set sign bits to 0 to possibly change later 
+         STWX    sign1,s 
+         LDWA    signif1,s
+         SUBA    signif2,s   ;subtract significands
+         BRGE    dontNeg     ;check if the result is less than 0
+         NEGA                ;negate it if it is
+         LDWX    0x8000,i    ;set first sign bit to 1
+         STWX    sign1,s     
+dontNeg: LDBX    expon1,s    ;lower the expontant until there is a 1 in the hidden bit slot or the expon is 000000
+         CPBX    1,i
+         BRLE    together
+         CPWA    0x0200,i
+         BRGE    together
+         ASLA
+         SUBX    1,i
+         STBX    expon1,s
+         BR      dontNeg
+
+together:CPWA    0x0200,i    ;check if the number will be normalized
+         BRLT    lesThNor    
+         ANDA    0x01FF,i    ;cut off the hidden bit if it is normal
+         STWA    total,s
+         LDWA    expon1,s
+         ASLA                ;shift the exponant to the right position
+         ANDA    0x7E00,i    ;comind the significand and exponant 
+         ORA     total,s
+         ORA     sign1,s     ;add the sign bit
+         STWA    total,s
+         BR statusFA         
+
+lesThNor:ANDA    0x01FF,i
+         STWA    total,s
+         LDWA    0,i         ;make sure the expont field is all zeros
+         ORA     total,s     ;or the significand with the sign bit
+         ORA     sign1,s
+         STWA    total,s
+
+statusFA:LDWX    total,s 
+         MOVFLGA             ;check if the value is negative
+         ANDA    0x0008,i
+         STWA    sign1,s
+         ASLX                ;shift the sign bit off to properly check if the value is zero
+         MOVFLGA             ;becuase negative zero is a thing
+         ANDA    0x0004,i
+         ADDA    sign1,s
+         CPWX    0xFC00,i    ;check if the value is inf or higher and set c bit if it is
+         BRLT    dontsetC
+         ADDA    0x0001,i
+dontsetC:STBA    oldNZVCA,s  ;store the new status flags 
+
+exitAdd: LDWA    total,s     
+         STWA    acumVal,s   ;store the total to be put in the acumalator
+         ADDSP   10,i
+         RET
+
+addFail: LDBA    '\n',i
+         STBA    charOut,d
+         LDWA    addMsg,i   ;Push address of message onto stack
+         STWA    -2,s
+         SUBSP   2,i
+         CALL    prntMsg     ;and print
+         STOP                ;Fatal error: program terminates
+
+addMsg: .ASCII  "ERROR: One of the numbers is inf or NaN\x00"
+;
+	 
+	 
+;******* Opcode 0x30 
+; BINFI instruction.
+;
+;
+counterI:.EQUATE 0
+denorm:  .EQUATE 1
+totalIn: .EQUATE 2 
+oldNZVC: .EQUATE 6
+
+opcode30:LDWA    0x00FE,i    ;Assert d, n, s, sf, x, sx, sfx
+         STWA    addrMask,d
+         CALL    assertAd
+         CALL    setAddr     ;Set address of trap operand
+         SUBSP   4,i        ;Allocate storage for locals
+         LDWX    0,i
+         LDBA    0,i
+         STWX    totalIn,s
+         STBX    denorm,s
+         LDBX    charIn,d
+         CPBX    '-',i       ;checks if the first char is a - sign
+         BRNE    notNeg
+         LDWA    0x8000,i    ;sets the sign bit if it is
+         LDBX    charIn,d
+notNeg:  Call    oneZero 
+         LDBX    -3,s
+         BRNE    noSetDe     ;checks if soon to be hidden bit is a zero
+         LDBX    1,i
+         STBX    denorm,s
+noSetDe: STWA    totalIn,s
+         LDBX    charIn,d
+         LDWA    0,i
+         LDWX    0,i
+signif:  CPWX    9,i         ;reads in the significand and adds them together
+         BRGE    out
+         STBX    counterI,s
+         LDBX    charIn,d
+         CALL    oneZero
+         ASLA
+         ADDA    -4,s
+         LDBX    counterI,s
+         ADDX    1,i
+         BR      signif
+
+out:     ADDA    totalIn,s   ;puts the significand and sign bit together and saves it
+         STWA    totalIn,s
+         LDBX    charIn,d
+         LDBX    denorm,s
+         BREQ    readEx
+         LDWX    0,i
+eatSix:  CPBX    6,i
+         BRGE    status      ;reads in and doesn't use the next 4 values if the hidden bit was zero
+         LDBA    charIn,d
+         ADDX    1,i
+         BR      eatSix
+
+readEx:  LDWA    0,i
+         LDWX    0,i
+exponI:  CPWX    6,i
+         STBX    counterI,s  ;reads in the exponant
+         BRGE    noMore
+         LDBX    charIn,d
+         CALL    oneZero
+         ASLA
+         ADDA    -4,s    
+         LDBX    counterI,s
+         ADDX    1,i
+         BR      exponI
+noMore:  LDWX    0,i
+exPlace: CPWX    9,i
+         BRGE    combineT    ;shifts the exponant so that it is in the right spot in the 2 bytes
+         ASLA
+         ADDX    1,i
+         BR      exPlace
+combineT:ADDA    totalIn,s 
+         STWA    totalIn,s   ;cominds the exponant and rest of the awnser
+
+status:  LDWX    totalIn,s 
+         MOVFLGA             ;checks if it is negative
+         ANDA    0x0008,i
+         STWA    counterI,s
+         ASLX                ;checks if it is zero becuase negative zero is a ting
+         MOVFLGA
+         ANDA    0x0004,i
+         ADDA    counterI,s
+         CPWX    0xFC00,i    ;checks if the value is inf or NaN and sets c bit if it is
+         BRLT    nosetC
+         ADDA    0x0001,i
+nosetC:  STBA    oldNZVC,s
+
+exit:    LDWA    totalIn,s 
+         STWA    opAddr,n    ;stores the value in the opadd and the accumulator
+         STWA    7,s
+         ADDSP   4,i
+         RET
+	 
+	 
+	 
+
+oneZero: SUBSP   2,i         ;reads in a number and cuts off the 3 part of the ascii leaving only the bit value
+         CPBX    '1',i
+         BREQ    saveVal
+         CPBX    '0',i
+         BREQ    saveVal
+         BR      binfiErr    ; if isn't a 1 or a 0 it will return a fail state
+saveVal: SUBX    0x0030,i 
+         STWX    0,s
+         ADDSP   2,i
+         RET
+
+binfiErr:LDBA    '\n',i
+         STBA    charOut,d
+         LDWA    binfiMsg,i   ;Push address of message onto stack
+         STWA    -2,s
+         SUBSP   2,i
+         CALL    prntMsg     ;and print
+         STOP                ;Fatal error: program terminates
+
+binfiMsg: .ASCII  "ERROR: Invalid BINFI input\x00"
+
+;******* Opcode 0x38
+;The DECO instruction.
+;Output format: If the operand is negative, the algorithm prints
+;a single '-' followed by the magnitude. Otherwise it prints the
+;magnitude without a leading '+'. It suppresses leading zeros.
+;******* Opcode 0x38
+;The DECO instruction.
+;Output format: If the operand is negative, the algorithm prints
+;a single '-' followed by the magnitude. Otherwise it prints the
+;magnitude without a leading '+'. It suppresses leading zeros.
+;
+counterO:  .EQUATE 0           ;Remainder of value to output 
+notdenor:  .EQUATE 1           ;Has a character been output yet?
+notinfin:  .EQUATE 2           ;Place value for division
+negO:       .EQUATE 3
+;
+opcode38:LDWA    0x00FF,i    ;Assert i, d, n, s, sf, x, sx, sfx
+         STWA    addrMask,d
+         CALL    assertAd
+         CALL    setAddr     ;Set address of trap operand
+         SUBSP   4,i         ;Allocate storage for locals
+         LDWX    0,i
+         STBX    negO,s 
+         LDWA    opAddr,n    ;A <- oprnd
+         CPWA    0,i         ;If oprnd is negative then
+         BRGE    printMag
+         LDBX    1,i       
+         STBX    negO,s      ;stores if the oprnd is negative
+printMag:ASLA                ;discards sign bit
+         LDBX    0,i
+         STBX    notdenor,s  ;sets boolean varibles
+         STBX    notinfin,s
+         
+for:     ASLA                ;shifts all of the expont bits out
+         STBX    counterO,s 
+         BRC     notde       ;if any are 1 sets the not denormalized boolean
+         LDWX    1,i
+         STBX    notinfin,s  ;if any are 0 sets the not infinity boolean
+         BR      endif
+notde:   LDWX    1,i
+         STBX    notdenor,s
+endif:   LDBX    counterO,s
+         ADDX    1,i
+         CPWX    6,i
+         BRLT    for
+         
+         LDBX    notdenor,s  ;loads the not denormal varible
+         BRNE    infinck     ;if it is 1 jumps to checking for infin
+         CALL    negSign
+         LDBX    '0',i       ;if it is 0 outputs a negative sign if it is negative and then a 0
+         STBX    charOut,d
+         BR      outHid
+infinck: LDBX    notinfin,s  ;if is infinity it first checks to see if it is true inf or NaN
+         BRNE    neither
+         LDBX    0,i
+NaNFor:  CPWX    9,i
+         BRGE    textOut
+         STBX    counterO,s
+         ASLA
+         BRC     NaNSet      ;if any are 1 in the significand sets to NaN
+         LDBX    counterO,s
+         ADDX    1,i
+         BR      NaNFor
+NaNSet:  LDBX    1,i
+         STBX    notinfin,s
+         LDBX    counterO,s
+         BR      NaNFor         
+textOut: LDBX    notinfin,s  ;checks if it is a inf or NaN output
+         BREQ    infOut
+         LDBX    'N',i
+         STBX    charOut,d
+         LDBX    'a',i
+         STBX    charOut,d
+         LDBX    'N',i
+         STBX    charOut,d
+         BR      finish
+infOut:  CALL    negSign     ;calls the negative command before outputing inf
+         LDBX    'i',i
+         STBX    charOut,d
+         LDBX    'n',i
+         STBX    charOut,d
+         LDBX    'f',i
+         STBX    charOut,d
+         BR      finish
+neither: CALL    negSign     ;if it is a normalized number it outputs the possible negative and then a 1
+         LDBX    '1',i
+         STBX    charOut,d          
+outHid:  LDBX    '.',i       
+         STBX    charOut,d
+         LDBX    0,i
+decimal: ADDX    1,i
+         CPWX    9,i         ;output the significand
+         BRGT    outdec 
+         STBX    counterO,s
+         ASLA
+         BRC     outone      
+         LDBX    '0',i       ;outputs a 0 when there isn't a carry out on the shift left
+         STBX    charOut,d
+         BR      done
+outone:  LDBX    '1',i
+         STBX    charOut,d   ;outputs a 1 when there is a carry
+done:    LDBX    counterO,s 
+         BR      decimal
+outdec:  LDBX    'b',i       ;outputs a b to show the break between the significand and the expon
+         STBX    charOut,d
+         LDWA    opAddr,n    ;has to reload the operand becuase whole thing got shifted out
+         ASLA
+         LDBX    notdenor,s  
+         BRNE    exponO      ;jumps ahead if the number is not denormalized
+         LDBX    '-',i       
+         STBX    charOut,d   ;outputs -31 for the exponant when the number is denormalized as per the book
+         LDBX    '3',i
+         STBX    charOut,d
+         LDBX    '0',i
+         STBX    charOut,d
+         BR      finish
+exponO:  LDBX    0,i               
+exponfor:ADDX    1,i         ;outputs the significcand
+         ASLA 
+         STBX    counterO,s
+         BRC     oneexp
+         LDBX    '0',i
+         STBX    charOut,d
+         BR      notOneEx
+oneexp:  LDBX    '1',i
+         STBX    charOut,d                  
+notOneEx:LDBX    counterO,s 
+         CPWX    5,i         ;checks if more numbers need to be outputed
+         BRLE    exponfor    
+finish:  ADDSP   4,i         ;Dallocate storage for locals
+         RET
+
+negSign: LDBX    5,s         ;checks if the negative bit is set and outputs a - sign if it is
+         BREQ    dontDis
+         LDBX    '-',i
+         STBX    charOut,d
+dontDis: RET
+;Subroutine to print the most significant decimal digit of the
+;remainder. It assumes that place (place2 here) contains the
+;decimal place value. It updates the remainder.
+;
+remain2: .EQUATE 2           ;Stack addresses while executing a
+outYet2: .EQUATE 4           ;  subroutine are greater by two because
+place2:  .EQUATE 6           ;  the retAddr is on the stack
+;
+divide:  LDWA    remain2,s   ;A <- remainder
+         LDWX    0,i         ;X <- 0
+divLoop: SUBA    place2,s    ;Division by repeated subtraction
+         BRLT    writeNum    ;If remainder is negative then done
+         ADDX    1,i         ;X <- X + 1
+         STWA    remain2,s   ;Store the new remainder
+         BR      divLoop
+;
+writeNum:CPWX    0,i         ;If X != 0 then
+         BREQ    checkOut
+         LDWA    TRUE,i      ;outYet <- TRUE
+         STWA    outYet2,s
+         BR      printDgt    ;and branch to print this digit
+checkOut:LDWA    outYet2,s   ;else if a previous char was output
+         BRNE    printDgt    ;then branch to print this zero
+         RET                 ;else return to calling routine
+;
+printDgt:ORX     0x0030,i    ;Convert decimal to ASCII
+         STBX    charOut,d   ;  and output it
+         RET                 ;return to calling routine
+;
+;******* Opcode 0x40
+;The HEXO instruction.
+;Outputs one word as four hex characters from memory.
+;
+opcode40:LDWA    0x00FF,i    ;Assert i, d, n, s, sf, x, sx, sfx
+         STWA    addrMask,d
+         CALL    assertAd
+         CALL    setAddr     ;Set address of trap operand
+         LDWA    opAddr,n    ;A <- oprnd
+         STWA    wordTemp,d  ;Save oprnd in wordTemp
+         LDBA    wordTemp,d  ;Put high-order byte in low-order A
+         ASRA                ;Shift right four bits
+         ASRA
+         ASRA
+         ASRA
+         CALL    hexOut      ;Output first hex character
+         LDBA    wordTemp,d  ;Put high-order byte in low-order A
+         CALL    hexOut      ;Output second hex character
+         LDBA    byteTemp,d  ;Put low-order byte in low order A
+         ASRA                ;Shift right four bits
+         ASRA
+         ASRA
+         ASRA
+         CALL    hexOut      ;Output third hex character
+         LDBA    byteTemp,d  ;Put low-order byte in low order A
+         CALL    hexOut      ;Output fourth hex character
+         RET
+;
+;Subroutine to output in hex the least significant nybble of the
+;accumulator.
+;
+hexOut:  ANDA    0x000F,i    ;Isolate the digit value
+         CPBA    9,i         ;If it is not in 0..9 then
+         BRLE    prepNum
+         SUBA    9,i         ;  convert to ASCII letter
+         ORA     0x0040,i    ;  and prefix ASCII code for letter
+         BR      writeHex
+prepNum: ORA     0x0030,i    ;else prefix ASCII code for number
+writeHex:STBA    charOut,d   ;Output nybble as hex
+         RET
+;
+;******* Opcode 0x48
+;The STRO instruction.
+;Outputs a null-terminated string from memory.
+;
+opcode48:LDWA    0x003E,i    ;Assert d, n, s, sf, x
+         STWA    addrMask,d
+         CALL    assertAd
+         CALL    setAddr     ;Set address of trap operand
+         LDWA    opAddr,d    ;Push address of string to print
+         STWA    -2,s
+         SUBSP   2,i
+         CALL    prntMsg     ;and print
+         ADDSP   2,i
+         RET
+;
+;******* Print subroutine
+;Prints a string of ASCII bytes until it encounters a null
+;byte (eight zero bits). Assumes one parameter, which
+;contains the address of the message.
+;
+msgAddr: .EQUATE 2           ;Address of message to print
+;
+prntMsg: LDWX    0,i         ;X <- 0
+         LDWA    0,i         ;A <- 0
+prntMore:LDBA    msgAddr,sfx ;Test next char
+         BREQ    exitPrnt    ;If null then exit
+         STBA    charOut,d   ;else print
+         ADDX    1,i         ;X <- X + 1 for next character
+         BR      prntMore
+;
+exitPrnt:RET
+;
+;******* Vectors for system memory map
+         .ADDRSS osRAM       ;User stack pointer
+         .ADDRSS wordTemp    ;System stack pointer
+         .ADDRSS charIn      ;Memory-mapped input device
+         .ADDRSS charOut     ;Memory-mapped output device
+         .ADDRSS loader      ;Loader program counter
+         .ADDRSS trap        ;Trap program counter
+;
+         .END
