@@ -1,0 +1,9 @@
+Vertices:
+A,B,C,D,E,F
+Edges
+(A,B,4)
+(A,C,2)
+(B,C,7)
+(B,E,8)
+(B,F,3)
+(C,D,10)
