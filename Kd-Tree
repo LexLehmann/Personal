@@ -1,0 +1,58 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.Arrays;
+import java.util.Random;
+
+public class kdTree {
+	static int k, numPoints;
+
+	public static void main(String[] args) {
+		try(BufferedReader bR = new BufferedReader(new FileReader("chapel.txt"))) {
+		int[][] inputArray;
+		int[][][] sortedArrays;
+		String[] info;
+		String line;
+		
+		line = bR.readLine();
+		info = line.split(" ");
+		
+		k = Integer.parseInt(info[0]);
+		numPoints = Integer.parseInt(info[1]);
+		
+		inputArray = new int[numPoints][];
+		for(int i = 0; i < numPoints; i++) {
+			line = bR.readLine();
+			info = line.split(" ");
+			int[] nextPoint = new int[k];
+			
+			for (int j = 0; j < k; j++) {
+				nextPoint[j] = Integer.parseInt(info[j]);
+			}
+			
+			inputArray[i] = nextPoint;
+		}
+		
+		sortedArrays = new int[k][][];
+		
+		for (int i = 0; i < k; i++) {
+			int[][] newCopy = Arrays.copyOf(inputArray, numPoints);
+			
+			quickSort(newCopy, 0, numPoints, i);
+		}
+		
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			System.err.println("Error");
+		}
+	}
+
+	
+	public static void quickSort(int[][] array, int start, int end, int k) {
+		Random rand = new Random(); 
+		if (start < end) {
+			int pivot = rand.nextInt(numPoints);
+			
+			int[] temp = array[pivot];
+		}
+	}
+}
