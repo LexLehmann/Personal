@@ -5,9 +5,10 @@ import java.util.Random;
 
 public class kdTree {
 	static int k, numPoints;
+	static int[][] tree;
 
 	public static void main(String[] args) {
-		try(BufferedReader bR = new BufferedReader(new FileReader("chapel.txt"))) {
+		try(BufferedReader bR = new BufferedReader(new FileReader("points.txt"))) {
 		int[][] inputArray;
 		int[][][] sortedArrays;
 		String[] info;
@@ -36,13 +37,23 @@ public class kdTree {
 		
 		for (int i = 0; i < k; i++) {
 			int[][] newCopy = Arrays.copyOf(inputArray, numPoints);
-			
-			quickSort(newCopy, 0, numPoints, i);
+			quickSort(newCopy, 0, numPoints-1, i);
 			
 			sortedArrays[i] = newCopy;
 		}
 		
-		buildTree(sortedArrays, 0, numPoints, 0);
+/*		for (int i = 0; i < k; i++) {
+			for (int j = 0; j < numPoints; j++) {
+				for (int val = 0; val < k; val++) {
+					System.out.print(sortedArrays[i][j][val] + " ");
+				}
+				System.out.println("");
+			}
+			System.out.println("");
+		}
+*/		tree = new int[numPoints][];
+
+		buildTree(sortedArrays, 1, 0);
 		
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -51,15 +62,15 @@ public class kdTree {
 	}
 
 	
-	private static void buildTree(int[][][] arrays, int start, int end, int k) {
-		
+	private static void buildTree(int[][][] arrays, int i, int k) {
+		tree[i] = arrays[k][arrays.length/2];
 	}
 
 
 	public static void quickSort(int[][] array, int start, int end, int k) {
 		Random rand = new Random(); 
 		if (start < end) {
-			int pivot = rand.nextInt(numPoints);
+			int pivot = rand.nextInt(end - start) + start;
 			
 			int[] temp = array[pivot];
 			array[pivot] = array[start];
@@ -70,9 +81,9 @@ public class kdTree {
 			boolean pivotFront = true;
 			while (front < back) {
 				if (array[front][k] > array[back][k]) {
-					temp = array[pivot];
-					array[pivot] = array[start];
-					array[start] = temp;
+					temp = array[front];
+					array[front] = array[back];
+					array[back] = temp;
 					if (pivotFront) {
 						front++;
 						pivotFront = false;
