@@ -38,7 +38,11 @@ public class kdTree {
 			int[][] newCopy = Arrays.copyOf(inputArray, numPoints);
 			
 			quickSort(newCopy, 0, numPoints, i);
+			
+			sortedArrays[i] = newCopy;
 		}
+		
+		buildTree(sortedArrays, 0, numPoints, 0);
 		
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -47,12 +51,45 @@ public class kdTree {
 	}
 
 	
+	private static void buildTree(int[][][] arrays, int start, int end, int k) {
+		
+	}
+
+
 	public static void quickSort(int[][] array, int start, int end, int k) {
 		Random rand = new Random(); 
 		if (start < end) {
 			int pivot = rand.nextInt(numPoints);
 			
 			int[] temp = array[pivot];
+			array[pivot] = array[start];
+			array[start] = temp;
+			
+			int front = start;
+			int back = end;
+			boolean pivotFront = true;
+			while (front < back) {
+				if (array[front][k] > array[back][k]) {
+					temp = array[pivot];
+					array[pivot] = array[start];
+					array[start] = temp;
+					if (pivotFront) {
+						front++;
+						pivotFront = false;
+					} else {
+						back--;
+						pivotFront = true;
+					}
+				} else {
+					if (pivotFront) {
+						back--;
+					} else {
+						front++;
+					}
+				}
+			}
+			quickSort(array, start, front-1, k);
+			quickSort(array, front+1, end, k);
 		}
 	}
 }
