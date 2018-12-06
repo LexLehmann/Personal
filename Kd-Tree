@@ -42,7 +42,7 @@ public class kdTree {
 			sortedArrays[i] = newCopy;
 		}
 		
-/*		for (int i = 0; i < k; i++) {
+		for (int i = 0; i < k; i++) {
 			for (int j = 0; j < numPoints; j++) {
 				for (int val = 0; val < k; val++) {
 					System.out.print(sortedArrays[i][j][val] + " ");
@@ -51,7 +51,7 @@ public class kdTree {
 			}
 			System.out.println("");
 		}
-*/		tree = new int[numPoints][];
+		tree = new int[numPoints][];
 
 		buildTree(sortedArrays, 1, 0);
 		
@@ -62,8 +62,30 @@ public class kdTree {
 	}
 
 	
-	private static void buildTree(int[][][] arrays, int i, int k) {
-		tree[i] = arrays[k][arrays.length/2];
+	private static void buildTree(int[][][] arrays, int place, int demCompare) {
+		tree[place] = arrays[demCompare][arrays[0].length/2];
+		System.out.println(tree[place][0] + " " + tree[place][1] + " " + tree[place][2]);
+		if (arrays.length > 1) {
+			int[][][] left = new int[k][arrays[0].length/2][];
+			int[][][] right = new int[k][arrays[0].length - arrays.length/2 - 1][];
+			
+			for (int i = 0; i < k; i++) {
+				int leftCount = 0;
+				int rightCount = 0;
+				for (int j = 0; j < arrays[0].length; j++) {
+					if (arrays[i][j][demCompare] < arrays[demCompare][arrays[0].length/2][demCompare]) {
+						left[i][leftCount] = arrays[i][j];
+						leftCount++;
+					} else {
+						right[i][rightCount] = arrays[i][j];
+						rightCount++;
+					}
+				}
+			}
+			
+			buildTree(left, place * 2, (demCompare + 1) % k);
+			buildTree(right, (place * 2) + 1, (demCompare + 1) % k);
+		}
 	}
 
 
