@@ -13,6 +13,7 @@ public class kdTree {
 		int[][][] sortedArrays;
 		String[] info;
 		String line;
+		int treeSize, tempNumPoints;
 		
 		line = bR.readLine();
 		info = line.split(" ");
@@ -52,7 +53,15 @@ public class kdTree {
 			System.out.println("");
 		}
 		
-		tree = new int[numPoints][];
+		treeSize = 1;
+		tempNumPoints = numPoints;
+		while (tempNumPoints != 0) {
+			treeSize = treeSize*2;
+			tempNumPoints = tempNumPoints/2;
+		}
+		
+		
+		tree = new int[treeSize][];
 		
 		buildTree(sortedArrays, 1, 0);
 		
@@ -64,10 +73,6 @@ public class kdTree {
 
 	
 	private static void buildTree(int[][][] arrays, int place, int demCompare) {
-		tree[place] = arrays[demCompare][arrays[0].length/2];
-		
-		System.out.println("center choice");
-		System.out.println(arrays[demCompare][arrays[0].length/2][0] + " " + arrays[demCompare][arrays[0].length/2][1] + " " + arrays[demCompare][arrays[0].length/2][2]);
 		
 		System.out.println("input array");
 		for (int i = 0; i < k; i++) {
@@ -79,6 +84,11 @@ public class kdTree {
 			}
 			System.out.println("");
 		}
+		
+		tree[place] = arrays[demCompare][arrays[0].length/2];
+		
+		System.out.println("center choice");
+		System.out.println(arrays[demCompare][arrays[0].length/2][0] + " " + arrays[demCompare][arrays[0].length/2][1] + " " + arrays[demCompare][arrays[0].length/2][2]);
 				
 		if (arrays[0].length > 1) {
 			int[][][] left = new int[k][arrays[0].length/2][];
@@ -87,7 +97,6 @@ public class kdTree {
 			for (int i = 0; i < k; i++) {
 				int leftCount = 0;
 				int rightCount = 0;
-				boolean valueUsed = false;
 				for (int j = 0; j < arrays[0].length; j++) {
 					if (arrays[i][j][demCompare] < arrays[demCompare][arrays[0].length/2][demCompare]) {
 						left[i][leftCount] = arrays[i][j];
@@ -96,17 +105,16 @@ public class kdTree {
 						right[i][rightCount] = arrays[i][j];
 						rightCount++;
 					} else {
-						boolean diff = false;
-						for (int c = 0; c < k; c++) {
-							if (arrays[i][j][c] != arrays[demCompare][arrays[0].length/2][c]) {
-								diff = true;
-							}
+						int pointTest = 0;
+						while (arrays[demCompare][pointTest] != arrays[i][j]) {
+							pointTest++;
 						}
-						
-						if (diff || valueUsed) {
-							
-						} else {
-							valueUsed = true;
+						if (pointTest < arrays[0].length/2) {
+							left[i][leftCount] = arrays[i][j];
+							leftCount++;
+						} else if (pointTest > arrays[0].length/2) {
+							right[i][rightCount] = arrays[i][j];
+							rightCount++;
 						}
 					}
 				}
