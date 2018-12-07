@@ -41,7 +41,7 @@ public class kdTree {
 			
 			sortedArrays[i] = newCopy;
 		}
-		
+
 		for (int i = 0; i < k; i++) {
 			for (int j = 0; j < numPoints; j++) {
 				for (int val = 0; val < k; val++) {
@@ -51,8 +51,9 @@ public class kdTree {
 			}
 			System.out.println("");
 		}
+		
 		tree = new int[numPoints][];
-
+		
 		buildTree(sortedArrays, 1, 0);
 		
 		} catch (Exception ex) {
@@ -64,27 +65,82 @@ public class kdTree {
 	
 	private static void buildTree(int[][][] arrays, int place, int demCompare) {
 		tree[place] = arrays[demCompare][arrays[0].length/2];
-		System.out.println(tree[place][0] + " " + tree[place][1] + " " + tree[place][2]);
-		if (arrays.length > 1) {
+		
+		System.out.println("center choice");
+		System.out.println(arrays[demCompare][arrays[0].length/2][0] + " " + arrays[demCompare][arrays[0].length/2][1] + " " + arrays[demCompare][arrays[0].length/2][2]);
+		
+		System.out.println("input array");
+		for (int i = 0; i < k; i++) {
+			for (int j = 0; j < arrays[0].length; j++) {
+				for (int val = 0; val < k; val++) {
+					System.out.print(arrays[i][j][val] + " ");
+				}
+				System.out.println("");
+			}
+			System.out.println("");
+		}
+				
+		if (arrays[0].length > 1) {
 			int[][][] left = new int[k][arrays[0].length/2][];
-			int[][][] right = new int[k][arrays[0].length - arrays.length/2 - 1][];
+			int[][][] right = new int[k][arrays[0].length - arrays[0].length/2 - 1][];
 			
 			for (int i = 0; i < k; i++) {
 				int leftCount = 0;
 				int rightCount = 0;
+				boolean valueUsed = false;
 				for (int j = 0; j < arrays[0].length; j++) {
 					if (arrays[i][j][demCompare] < arrays[demCompare][arrays[0].length/2][demCompare]) {
 						left[i][leftCount] = arrays[i][j];
 						leftCount++;
-					} else {
+					} else if (arrays[i][j][demCompare] > arrays[demCompare][arrays[0].length/2][demCompare]) {
 						right[i][rightCount] = arrays[i][j];
 						rightCount++;
+					} else {
+						boolean diff = false;
+						for (int c = 0; c < k; c++) {
+							if (arrays[i][j][c] != arrays[demCompare][arrays[0].length/2][c]) {
+								diff = true;
+							}
+						}
+						
+						if (diff || valueUsed) {
+							
+						} else {
+							valueUsed = true;
+						}
 					}
 				}
 			}
 			
-			buildTree(left, place * 2, (demCompare + 1) % k);
-			buildTree(right, (place * 2) + 1, (demCompare + 1) % k);
+			/*
+			System.out.println("left array");
+			for (int i = 0; i < k; i++) {
+				for (int j = 0; j < left[0].length; j++) {
+					for (int val = 0; val < k; val++) {
+						System.out.print(left[i][j][val] + " ");
+					}
+					System.out.println("");
+				}
+				System.out.println("");
+			}
+			
+			System.out.println("right array");
+			for (int i = 0; i < k; i++) {
+				for (int j = 0; j < right[0].length; j++) {
+					for (int val = 0; val < k; val++) {
+						System.out.print(right[i][j][val] + " ");
+					}
+					System.out.println("");
+				}
+				System.out.println("");
+			}*/
+			
+			if (left[0].length > 0) {
+				buildTree(left, place * 2, (demCompare + 1) % k);
+			}
+			if (right[0].length > 0) {
+				buildTree(right, (place * 2) + 1, (demCompare + 1) % k);
+			}
 		}
 	}
 
