@@ -5,12 +5,12 @@ import java.util.Random;
 
 public class kdTree {
 	static int k, numPoints;
-	static int[][] tree;
+	static double[][] tree;
 
 	public static void main(String[] args) {
 		try(BufferedReader bR = new BufferedReader(new FileReader("points.txt"))) {
-		int[][] inputArray;
-		int[][][] sortedArrays;
+		double[][] inputArray;
+		double[][][] sortedArrays;
 		String[] info;
 		String line;
 		int treeSize, tempNumPoints;
@@ -21,23 +21,23 @@ public class kdTree {
 		k = Integer.parseInt(info[0]);
 		numPoints = Integer.parseInt(info[1]);
 		
-		inputArray = new int[numPoints][];
+		inputArray = new double[numPoints][];
 		for(int i = 0; i < numPoints; i++) {
 			line = bR.readLine();
 			info = line.split(" ");
-			int[] nextPoint = new int[k];
+			double[] nextPoint = new double[k];
 			
 			for (int j = 0; j < k; j++) {
-				nextPoint[j] = Integer.parseInt(info[j]);
+				nextPoint[j] = Double.parseDouble(info[j]);
 			}
 			
 			inputArray[i] = nextPoint;
 		}
 		
-		sortedArrays = new int[k][][];
+		sortedArrays = new double[k][][];
 		
 		for (int i = 0; i < k; i++) {
-			int[][] newCopy = Arrays.copyOf(inputArray, numPoints);
+			double[][] newCopy = Arrays.copyOf(inputArray, numPoints);
 			quickSort(newCopy, 0, numPoints-1, i);
 			
 			sortedArrays[i] = newCopy;
@@ -51,51 +51,66 @@ public class kdTree {
 		}
 		
 		
-		tree = new int[treeSize][];
+		tree = new double[treeSize][];
 		
 		buildTree(sortedArrays, 1, 0);
 		
 		
-		int[] neighborTest = {6,5,55};
+		double[] neighborTest = {6,5,41};
 		
-		System.out.println(nearestNeighbor(neighborTest, 1, 0));
+		
+		System.out.println(closestPair(inputArray));
 		
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.err.println("Error");
 		}
 	}
-
 	
-	private static double nearestNeighbor(int[] point, int i, int dem) {
-		double dis = Integer.MAX_VALUE;
+	private static double closestPair(double[][] input) {
+		double dis = Double.MAX_VALUE;
+		double temp;
+		for (int i = 0; i < input.length; i++) {
+			temp = nearestNeighbor(input[i], 1, 0);
+			if (temp < dis) {
+				dis = temp;
+			}
+		}
+		
+		return dis;
+	}
+	
+	private static double nearestNeighbor(double[] point, int i, int dem) {
+		double dis = Double.MAX_VALUE;
 		double disToHere = 0;
-		double disAcross = Integer.MAX_VALUE;
+		double disAcross = Double.MAX_VALUE;
 		boolean left = true;
 		
+		
 		if (i * 2 < tree.length) {
-			if (point[dem] < tree[i][dem]) {
+			if (tree[i * 2] != null && point[dem] < tree[i][dem]) {
 				dis = nearestNeighbor(point, i * 2, (dem + 1) % k);
 				left = true;
-			} else {
+			} else if (tree[(i * 2) + 1] != null) {
 				dis = nearestNeighbor(point, (i * 2) + 1, (dem + 1) % k);
 				left = false;
 			}
 		}
 		
 		for(int j = 0; j < k; j++) {
-			disToHere = Math.pow((point[j] - tree[i][dem]), 2);
+			disToHere = disToHere + Math.pow((point[j] - tree[i][j]), 2);
 		}
 		disToHere = Math.sqrt(disToHere);
 		
-		if (dis > disToHere) {
+		
+		if (dis > disToHere && tree[i] != point) {
 			dis = disToHere;
 		}
 		
 		if (i * 2 < tree.length) {
-			if (left && point[dem] + dis > tree[i][dem]) {
+			if (tree[(i * 2) + 1] != null && left && point[dem] + dis > tree[i][dem]) {
 				disAcross = nearestNeighbor(point, (i * 2) + 1, (dem + 1) % k);
-			} else if (!left && point[dem] - dis < tree[i][dem]) {
+			} else if (tree[i * 2] != null && !left && point[dem] - dis < tree[i][dem]) {
 				disAcross = nearestNeighbor(point, i * 2, (dem + 1) % k);
 			}
 		}
@@ -108,7 +123,7 @@ public class kdTree {
 	}
 
 
-	private static void buildTree(int[][][] arrays, int place, int demCompare) {
+	private static void buildTree(double[][][] arrays, int place, int demCompare) {
 		
 		/*System.out.println("input array");
 		for (int i = 0; i < k; i++) {
@@ -127,8 +142,8 @@ public class kdTree {
 //		System.out.println(arrays[demCompare][arrays[0].length/2][0] + " " + arrays[demCompare][arrays[0].length/2][1] + " " + arrays[demCompare][arrays[0].length/2][2]);
 				
 		if (arrays[0].length > 1) {
-			int[][][] left = new int[k][arrays[0].length/2][];
-			int[][][] right = new int[k][arrays[0].length - arrays[0].length/2 - 1][];
+			double[][][] left = new double[k][arrays[0].length/2][];
+			double[][][] right = new double[k][arrays[0].length - arrays[0].length/2 - 1][];
 			
 			for (int i = 0; i < k; i++) {
 				int leftCount = 0;
@@ -166,12 +181,12 @@ public class kdTree {
 	}
 
 
-	public static void quickSort(int[][] array, int start, int end, int k) {
+	public static void quickSort(double[][] array, int start, int end, int k) {
 		Random rand = new Random(); 
 		if (start < end) {
 			int pivot = rand.nextInt(end - start) + start;
 			
-			int[] temp = array[pivot];
+			double[] temp = array[pivot];
 			array[pivot] = array[start];
 			array[start] = temp;
 			
