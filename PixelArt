@@ -3,28 +3,36 @@ import java.io.FileReader;
 
 public class Pixelart {
 	static int[][] board;
+	static int red, black;
 	
 	public static void main(String[] args) {
 		
-		try(BufferedReader bR = new BufferedReader(new FileReader("chapel.txt"))) {
+		try(BufferedReader bR = new BufferedReader(new FileReader("art.txt"))) {
 			int rows, cols;
 			String line;
 			String[] info;
+			int[][] blackSquares;
+			int[][] redSquares;
+			int redCount = 0;
+			int blackCount = 0;
+			
+			red = 0;
+			black = 0;
 			
 			line = bR.readLine();
 			info = line.split(" ");
 			cols = Integer.parseInt(info[0]);
 			rows = Integer.parseInt(info[1]);
 			
-			board = new int[cols][rows];
+			board = new int[rows][cols];
 			
 			for (int i = 0; i < rows; i++) {
 				line = bR.readLine();
 				for (int j = 0; j < cols; j++) {
 					if (line.charAt(j) == '#') {
-						board[j][i] = 0;
+						board[i][j] = 0;
 					} else {
-						board[j][i] = -1;
+						board[i][j] = -1;
 					}
 				}
 			}
@@ -37,35 +45,52 @@ public class Pixelart {
 				}
 			}
 			
-			for (int i = 0; i < rows; i++) {
-				for (int j = 0; j < cols; j++) {
-					System.out.print(board[i][j] + " ");
-				}
-				System.out.println();
-			}
+			if (black == red) {
+				blackSquares = new int[black][2];
+				redSquares = new int[red][2];
 			
+				for (int i = 0; i < rows; i++) {
+					for (int j = 0; j < cols; j++) {
+						if (board[i][j] == 1) {
+							redSquares[redCount][0] = i;
+							redSquares[redCount][1] = j;
+							redCount++;
+						} else if (board[i][j] == 2) {
+							blackSquares[blackCount][0] = i;
+							blackSquares[blackCount][1] = j;
+							blackCount++;
+						}
+					}
+				}
+				
+				
+			} else {
+				System.out.println("impossible");
+			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.err.println("Error");
 		}
 	}
 
-	private static void checker(int i, int j, boolean red) {
+	private static void checker(int i, int j, boolean redColor) {
 		
-		if (red) {
+		if (redColor) {
 			board[i][j] = 1;
+			red++;
 		} else {
 			board[i][j] = 2;
+			black++;
 		}
 		
 		if (i > 0 && board[i-1][j] == 0) {
-			checker(i-1, j, !red);
+			checker(i-1, j, !redColor);
 		} else if (j > 0 && board[i][j-1] == 0) {
-			checker(i, j-1, !red);
+			checker(i, j-1, !redColor);
 		} else if (i < board.length - 1 && board[i+1][j] == 0) {
-			checker(i+1, j, !red);
+			checker(i+1, j, !redColor);
 		} else if (j < board[i].length - 1 && board[i][j + 1] == 0) {
-			checker(i, j+1, !red);
+			checker(i, j+1, !redColor);
 		}
 	}
 
