@@ -6,6 +6,8 @@ public class Drainage {
 	static PathLengths[][] paths;
 	static int rows, columns;
 	
+	// if given a map that has elevation values it returns the longest
+	// strictly decreasing path
 	public static void main(String[] args){
 		
 		try(BufferedReader bR = new BufferedReader(new FileReader("map.txt"))) {
@@ -27,6 +29,7 @@ public class Drainage {
 				elevations = new int[rows][columns];
 				paths =  new PathLengths[rows][columns];
 				
+				// intializes the paths array
 				for (int i = 0; i < rows; i++) {
 					line = bR.readLine();
 					info = line.split(" ");
@@ -37,6 +40,10 @@ public class Drainage {
 					}
 				}
 				
+				//sets the values of the paths array
+				// this is done by recursion, but it saves the values
+				// of the points it reachs so it doesn't ever get called twice on the 
+				// same cell of the array
 				for (int i = 0; i < rows; i++) {
 					for (int j = 0; j < columns; j++) {
 						if (paths[i][j].getPathDown() == 0) {
@@ -45,6 +52,7 @@ public class Drainage {
 					}
 				}
 				
+				// finds the longest path done by searching the array for the max value
 				int max = 0;
 				for (int i = 0; i < rows; i++) {
 					for (int j = 0; j < columns; j++) {
@@ -63,6 +71,12 @@ public class Drainage {
 		}
 	}
 	
+	// gets call of the paths array and runs recursivlly around it on
+	// all cells that are set and are below it
+	// sets the value of the cell after it determines which path
+	// down is the longest and terminates
+	// returns the length of the pathdown to make it easier to 
+	// select which path down was the longest
 	private static int setPaths(int i, int j) {
 		int pathDown = 0;
 		int temp = 0;
@@ -116,6 +130,9 @@ public class Drainage {
 	}
 }
 
+// helper class that holds the path down and returns the values
+// this is a relic of a previous version of the program that had more information
+// stored here
 class PathLengths {
 	private int pathDown;
 	
