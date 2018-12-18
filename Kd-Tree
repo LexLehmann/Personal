@@ -3,6 +3,8 @@ import java.io.FileReader;
 import java.util.Arrays;
 import java.util.Random;
 
+// implements a kd Tree and uses it to find the closest pair of
+// points in any demensional space in O(nlogn) time
 public class kdTree {
 	static int k, numPoints;
 	static double[][] tree;
