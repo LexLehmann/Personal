@@ -9,6 +9,10 @@ public class Celebrity {
 
 
 	// Implement this method
+	// pairs off the list and removes half the list by removing all
+	// that can't be the celebrity (who knows no one and who everyone knows)
+	// calls celebrity on the list of crossed off people and then turns the last
+	// person at the end of the elimination
 	public String findCelebrity(List<String> guests) {
 		
 		String celebrity = "";
