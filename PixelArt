@@ -4,6 +4,7 @@ import java.io.FileReader;
 public class Pixelart {
 	static int[][] board;
 	static int red, black;
+	static int[][] edges;
 	
 	public static void main(String[] args) {
 		
@@ -13,8 +14,11 @@ public class Pixelart {
 			String[] info;
 			int[][] blackSquares;
 			int[][] redSquares;
+			boolean flow;
+
 			int redCount = 0;
 			int blackCount = 0;
+			int source, sink;
 			
 			red = 0;
 			black = 0;
@@ -63,13 +67,104 @@ public class Pixelart {
 					}
 				}
 				
+				edges = new int[black+red+2][black+red+2];
+				source = black+red;
+				sink = black+red+1;
+				
+				for (int i = 0; i < black+red+2; i++) {
+					for (int j = 0; j < black+red+2; j++) {
+						edges[i][j] = 0;
+					}
+				}
+				
+				for (int i = 0; i < black; i++) {
+					for (int j = 0; j < red; j++) {
+						if (blackSquares[i][0] == redSquares[j][0] && blackSquares[i][1] == redSquares[j][1] - 1 || 
+								blackSquares[i][0] == redSquares[j][0] && blackSquares[i][1] == redSquares[j][1] + 1 || 
+								blackSquares[i][0] == redSquares[j][0] - 1 && blackSquares[i][1] == redSquares[j][1] ||
+								blackSquares[i][0] == redSquares[j][0] + 1 && blackSquares[i][1] == redSquares[j][1] ) {
+							edges[i][black + j] = 1;
+						}
+					}
+				}
+				
+				for (int i = 0; i < black; i++) {
+					edges[source][i] = 1;
+				}
+				
+				for (int i = 0; i < red; i++) {
+					edges[black + i][sink] = 1;
+				}
+				int count = 0;
+				
+				do {
+					flow = augmentingPath();
+					count++;
+				} while (flow);
+				
+				if (count == black + 1) {
+					for (int i = black; i < red+black; i++) {
+						for (int j = 0; j < black; j++) {
+							if (edges[i][j] == 1) {
+								System.out.println(redSquares[i-black][1] + " " + redSquares[i-black][0] + " " 
+										+ blackSquares[j][1] + " " + blackSquares[j][0]);
+							}
+						}
+					}
+				} else {
+					System.out.println("Impossible");
+				}
 				
 			} else {
-				System.out.println("impossible");
+				System.out.println("Impossible");
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.err.println("Error");
+		}
+	}
+
+	private static boolean augmentingPath() {
+		int[] visits = new int[edges.length];
+		int[] queue = new int[edges.length];
+		int start = 0;
+		int end = 0;
+		
+		for (int i = 0; i < visits.length; i++) {
+			visits[i] = -1;
+		}
+		
+		queue[start] = edges.length - 2;
+		visits[queue[start]] = -2;
+		start++;
+		
+		while (start > end && visits[edges.length-1] == -1) {
+			for (int i = 0; i < edges.length; i++) {
+				if (edges[queue[end]][i] == 1 && visits[i] == -1) {
+					queue[start] = i;
+					start++;
+					visits[i] = queue[end];
+				}
+			}
+			end++;
+		}
+		
+		if (start <= end) {
+			return false;
+		} else {
+			int prev = edges.length-1;
+			int cur;
+			while (visits[prev] != -2) {
+				cur = prev;
+				prev = visits[prev];
+				
+//				System.out.println(cur + " " + prev);
+				
+				edges[prev][cur] = 0;
+				edges[cur][prev] = 1;
+			}
+			
+			return true;
 		}
 	}
 
@@ -85,11 +180,14 @@ public class Pixelart {
 		
 		if (i > 0 && board[i-1][j] == 0) {
 			checker(i-1, j, !redColor);
-		} else if (j > 0 && board[i][j-1] == 0) {
+		}
+		if (j > 0 && board[i][j-1] == 0) {
 			checker(i, j-1, !redColor);
-		} else if (i < board.length - 1 && board[i+1][j] == 0) {
+		}
+		if (i < board.length - 1 && board[i+1][j] == 0) {
 			checker(i+1, j, !redColor);
-		} else if (j < board[i].length - 1 && board[i][j + 1] == 0) {
+		}
+		if (j < board[i].length - 1 && board[i][j + 1] == 0) {
 			checker(i, j+1, !redColor);
 		}
 	}
