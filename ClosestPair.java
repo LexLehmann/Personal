@@ -4,7 +4,9 @@
 import java.io.*;
 import java.util.Arrays;
 
-
+// finds the closest pair of points in a list of 2-dimensional points
+// runs in O(nlogn) time, but only works in 2d space as the number of
+// points you would have to check that cross the cut would grow exponentially
 public class ClosestPair {
 	static Point[] points;
 	public static void main(String[] args)  throws IOException {
@@ -62,14 +64,16 @@ public class ClosestPair {
 			
 			points[i] = new Point(x, y);
 		}
+		
 		Arrays.sort(points);
+		
+		// main work done here
 		System.out.println(shortestDis(0, numPoints-1));
 	}
 	public static float shortestDis(int arrayStart, int arrayEnd) {
 		float dis = 0;
-		if (arrayEnd - arrayStart < 3) {							// Base Case
-			Point tempPoint;
-			if (arrayEnd - arrayStart == 1) {
+		if (arrayEnd - arrayStart < 3) {							// Base Case where there are only 2			Point tempPoint;								// 
+			if (arrayEnd - arrayStart == 1) {						// or 3 points in the subgroup
 				dis = (float) Math.sqrt(Math.pow(points[arrayStart].getX()-points[arrayEnd].getX(),2) 
 						+ Math.pow(points[arrayStart].getY()-points[arrayEnd].getY(),2));
 				if (points[arrayStart].getY() > points[arrayEnd].getY()) {
@@ -114,13 +118,16 @@ public class ClosestPair {
 			Point[] combList, closeToCenter;
 			median = (points[half].getX() + points[half + 1].getX()) / 2;
 			
+			// run the method on each of the sublists on each side of the split
 			one = shortestDis(arrayStart, half);
 			two = shortestDis(half + 1, arrayEnd);
 			
+			// choose what the closest pair of points is
 			delta = Math.min(one, two);
 			dis = delta;
 			length = arrayEnd - arrayStart + 1;
 			
+			//merge sort the lists into a single list sorted by the y value
 			combList = new Point[length];
 			listOne = arrayStart;
 			listTwo = half +1;
@@ -149,6 +156,8 @@ public class ClosestPair {
 			int closeToCenterLength = 0;
 			closeToCenter = new Point[length];
 			
+			// builds the list of points that can be close enough to the split to be closer than the current
+			// closest pair
 			for (int i = 0; i < length; i++) {
 				if (Math.abs(combList[i].getX() - median) < delta) {
 					closeToCenter[closeToCenterLength] = combList[i];
@@ -156,7 +165,9 @@ public class ClosestPair {
 				}
 			}
 			
-			for (int i = 0; i < closeToCenterLength; i++) {
+			// checks if the points across the other side can be close enough to choose over the one on this side
+			// of the split
+			for (int i = 0; i < closeToCenterLength; i++) {				
 				for (int j = i + 1; j < i + 15; j++) {
 					if (j < closeToCenterLength) {
 						float temp = (float) Math.sqrt(Math.pow(closeToCenter[i].getX()-closeToCenter[j].getX(),2) 
@@ -172,6 +183,9 @@ public class ClosestPair {
 	}
 }
 
+
+// the subclass that helps by holding the information about each point
+// and can compare the points to each other based on their X value
 class Point implements Comparable<Point>{
 	private float xValue;
 	private float yValue;
