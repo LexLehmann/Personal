@@ -6,6 +6,8 @@ public class Pixelart {
 	static int red, black;
 	static int[][] edges;
 	
+	// returns a way to tile a pixel art image with dominos
+	// or returns impossible if it can't be done
 	public static void main(String[] args) {
 		
 		try(BufferedReader bR = new BufferedReader(new FileReader("art.txt"))) {
@@ -30,6 +32,7 @@ public class Pixelart {
 			
 			board = new int[rows][cols];
 			
+			// reads in the board
 			for (int i = 0; i < rows; i++) {
 				line = bR.readLine();
 				for (int j = 0; j < cols; j++) {
@@ -41,6 +44,8 @@ public class Pixelart {
 				}
 			}
 			
+			// sets all the tiles in the board to
+			// have the value of red square or black square
 			for (int i = 0; i < rows; i++) {
 				for (int j = 0; j < cols; j++) {
 					if (board[i][j] == 0) {
@@ -52,7 +57,8 @@ public class Pixelart {
 			if (black == red) {
 				blackSquares = new int[black][2];
 				redSquares = new int[red][2];
-			
+				
+				// builds the arrays that hold which point is where in the larger array
 				for (int i = 0; i < rows; i++) {
 					for (int j = 0; j < cols; j++) {
 						if (board[i][j] == 1) {
@@ -71,12 +77,14 @@ public class Pixelart {
 				source = black+red;
 				sink = black+red+1;
 				
+				// build the array that holds all of the possible edges
 				for (int i = 0; i < black+red+2; i++) {
 					for (int j = 0; j < black+red+2; j++) {
 						edges[i][j] = 0;
 					}
 				}
 				
+				//puts in all of the edges between tiles that touch each other
 				for (int i = 0; i < black; i++) {
 					for (int j = 0; j < red; j++) {
 						if (blackSquares[i][0] == redSquares[j][0] && blackSquares[i][1] == redSquares[j][1] - 1 || 
@@ -88,20 +96,24 @@ public class Pixelart {
 					}
 				}
 				
+				// puts in the edges that connect the black tiles to the source
 				for (int i = 0; i < black; i++) {
 					edges[source][i] = 1;
 				}
 				
+				// puts in the edges that connect the red tiles to the sink
 				for (int i = 0; i < red; i++) {
 					edges[black + i][sink] = 1;
 				}
 				int count = 0;
 				
+				// runs max flow on the egde and keeps track of how much flow goes through
 				do {
 					flow = augmentingPath();
 					count++;
 				} while (flow);
 				
+				// prints out the domino tiling
 				if (count == black + 1) {
 					for (int i = black; i < red+black; i++) {
 						for (int j = 0; j < black; j++) {
@@ -123,7 +135,9 @@ public class Pixelart {
 			System.err.println("Error");
 		}
 	}
-
+	
+	// finds the augmenting path through the graph and resets the values
+	// of the edges when it has chosen one
 	private static boolean augmentingPath() {
 		int[] visits = new int[edges.length];
 		int[] queue = new int[edges.length];
@@ -167,7 +181,11 @@ public class Pixelart {
 			return true;
 		}
 	}
-
+	
+	// helper method to color all of the tiles
+	// recursivally runs on each tile, but it saves the 
+	// value of any tile it reaches so it doesn't run 
+	// multiple times on each tile and stays O(n)
 	private static void checker(int i, int j, boolean redColor) {
 		
 		if (redColor) {
