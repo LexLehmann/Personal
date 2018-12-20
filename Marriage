@@ -2,7 +2,10 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 
 public class Marriage {
-
+	
+	// finds the shortest paths for w to x and y to z such
+	// that the two things moving through the graph are never agjancent to each other
+	// does this by building a new graph with v^2 vertices
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		try(BufferedReader bR = new BufferedReader(new FileReader("chapel.txt"))) {
@@ -41,6 +44,8 @@ public class Marriage {
 			
 			loverLoc = new int[numVertices * numVertices][];
 			
+			// builds the new graph that represents where both
+			// lovers are at the same time
 			for (int i = 0; i < loverLoc.length; i++) {
 				int one = i / numVertices;
 				int two = i % numVertices;
@@ -83,7 +88,8 @@ public class Marriage {
 				}
 			}
 			
-			
+			// runs breadth-first search to find the
+			// shortest path
 			int start = hisStart * numVertices + herStart;
 			int end = hisEnd * numVertices + herEnd;
 			int removed;
@@ -114,6 +120,7 @@ public class Marriage {
 			String hisPath = "";
 			String herPath = "";
 			
+			// prints out the two paths
 			while (removed != -1) {
 				hisPath = (int)(removed / numVertices) + " " + hisPath;
 				herPath = (removed % numVertices) + " " + herPath;
