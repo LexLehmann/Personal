@@ -10,8 +10,8 @@ def setMap(x, count, cols):
         setMap(x + cols, count, cols)
     if (x % cols != 0 and board[x] == board[x - 1] and (map[x - 1] == "0" or map[x - 1] == "1")):
         setMap(x - 1, count, cols)
-    if ((x + 1) % cols != 0 and board[x] == board[x - 1] and (map[x + 1] == "0" or map[x + 1] == "1")):
-        setMap(x - 1, count, cols)
+    if ((x + 1) % cols != 0 and board[x] == board[x + 1] and (map[x + 1] == "0" or map[x + 1] == "1")):
+        setMap(x + 1, count, cols)
     return
 
 
@@ -32,10 +32,16 @@ def main():
             count += 1
             setMap(x, count, cols)
 
-    print(map[0])
-    print(map[1])
-    print(map[2])
-    print(map[3])
+    cases = int(input())
 
+    for num in range(cases):
+        line = input().split(" ")
+        if (map[(int(line[0])-1) * cols + int(line[1])-1] == map[(int(line[2])-1) * cols + int(line[3])-1]):
+            if (board[(int(line[0]) - 1) * cols + int(line[1]) - 1] == "1"):
+                print("decimal")
+            else :
+                print("binary")
+        else :
+            print("neither")
 
 main()
