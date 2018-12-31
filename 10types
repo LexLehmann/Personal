@@ -1,33 +1,41 @@
-inputmap = input().split(' ')
-rows = int(inputmap[0])
-cols = int(inputmap[1])
-
 board = []
 map = []
-for x in range(rows):
-    line = input()
-    for y in range(cols):
-        board.append(line[y])
-        map.append(line[y])
 
-count = 1
-for x in range(len(board)):
-    if(map[x] == "0" or map[x] == "1"):
-        count += 1
-        setmap(x)
-        
-print(map[0])
-print(map[2])
-
-def setmap(x):
+def setMap(x, count, cols):
     map[x] = count
-    
-    if(x-cols > 0 and board[x] == board[x-cols] and (map[x-cols] == "0" or map[x-cols] == "1")):
-        setmap(x-cols)
-    if(x+cols < len(board) and board[x] == board[x+cols] and (map[x+cols] == "0" or map[x+cols] == "1")):
-        setmap(x+cols)
-    if(x%cols != 0 and board[x] == board[x-1] and (map[x-1] == "0" or map[x-1] == "1")):
-        setmap(x-1)
-    if((x+1)%cols != 0 and board[x] == board[x-1] and (map[x+1] == "0" or map[x+1] == "1")):
-        setmap(x-1)
+
+    if (x - cols > 0 and board[x] == board[x - cols] and (map[x - cols] == "0" or map[x - cols] == "1")):
+        setMap(x - cols, count, cols)
+    if (x + cols < len(board) and board[x] == board[x + cols] and (map[x + cols] == "0" or map[x + cols] == "1")):
+        setMap(x + cols, count, cols)
+    if (x % cols != 0 and board[x] == board[x - 1] and (map[x - 1] == "0" or map[x - 1] == "1")):
+        setMap(x - 1, count, cols)
+    if ((x + 1) % cols != 0 and board[x] == board[x - 1] and (map[x + 1] == "0" or map[x + 1] == "1")):
+        setMap(x - 1, count, cols)
     return
+
+
+def main():
+    inputmap = input().split(' ')
+    rows = int(inputmap[0])
+    cols = int(inputmap[1])
+
+    for x in range(rows):
+        line = input()
+        for y in range(cols):
+            board.append(line[y])
+            map.append(line[y])
+
+    count = 1
+    for x in range(len(board)):
+        if (map[x] == "0" or map[x] == "1"):
+            count += 1
+            setMap(x, count, cols)
+
+    print(map[0])
+    print(map[1])
+    print(map[2])
+    print(map[3])
+
+
+main()
