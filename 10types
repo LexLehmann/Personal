@@ -1,47 +1,56 @@
-board = []
+import sys
+key = []
 map = []
 
-def setMap(x, count, cols):
+def setMap(x):
+    prev = map[x]
     map[x] = count
 
-    if (x - cols > 0 and board[x] == board[x - cols] and (map[x - cols] == "0" or map[x - cols] == "1")):
-        setMap(x - cols, count, cols)
-    if (x + cols < len(board) and board[x] == board[x + cols] and (map[x + cols] == "0" or map[x + cols] == "1")):
-        setMap(x + cols, count, cols)
-    if (x % cols != 0 and board[x] == board[x - 1] and (map[x - 1] == "0" or map[x - 1] == "1")):
-        setMap(x - 1, count, cols)
-    if ((x + 1) % cols != 0 and board[x] == board[x + 1] and (map[x + 1] == "0" or map[x + 1] == "1")):
-        setMap(x + 1, count, cols)
+    print("blarg")
+
+    if (x - cols > 0 and prev == map[x - cols]):
+        setMap(x - cols)
+    if (x + cols < len(map) and prev == map[x + cols]):
+        setMap(x + cols)
+    if (x % cols != 0 and prev == map[x - 1]):
+        setMap(x - 1)
+    if ((x + 1) % cols != 0 and prev == map[x + 1]):
+        setMap(x + 1)
     return
 
 
 def main():
     inputmap = input().split(' ')
+    global cols
+    global count
     rows = int(inputmap[0])
     cols = int(inputmap[1])
 
     for x in range(rows):
         line = input()
         for y in range(cols):
-            board.append(line[y])
             map.append(line[y])
 
     count = 1
-    for x in range(len(board)):
+    key.append("-1")
+    key.append("-1")
+    for x in range(len(map)):
         if (map[x] == "0" or map[x] == "1"):
             count += 1
-            setMap(x, count, cols)
+            key.append(map[x])
+            setMap(x)
 
     cases = int(input())
 
     for num in range(cases):
         line = input().split(" ")
         if (map[(int(line[0])-1) * cols + int(line[1])-1] == map[(int(line[2])-1) * cols + int(line[3])-1]):
-            if (board[(int(line[0]) - 1) * cols + int(line[1]) - 1] == "1"):
+            if (key[map[(int(line[0])-1) * cols + int(line[1])-1]] == "1"):
                 print("decimal")
             else :
                 print("binary")
         else :
             print("neither")
 
+sys.setrecursionlimit(1000000)
 main()
