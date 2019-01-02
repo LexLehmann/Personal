@@ -6,8 +6,6 @@ def setMap(x):
     prev = map[x]
     map[x] = count
 
-    print("blarg")
-
     if (x - cols > 0 and prev == map[x - cols]):
         setMap(x - cols)
     if (x + cols < len(map) and prev == map[x + cols]):
