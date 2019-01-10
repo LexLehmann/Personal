@@ -1,0 +1,36 @@
+row = []
+
+row.append(input().split(" "))
+row.append(input().split(" "))
+row.append(input().split(" "))
+row.append(input().split(" "))
+
+choice = int(input())
+
+
+new = [4]
+new[0] = [4]
+new[1] = [4]
+new[2] = [4]
+new[3] = [4]
+
+if(choice == 0):
+    for line in new:
+        for elem in line:
+            val = "0"
+            count = 0
+            while(val == "0" or count < 4):
+                val = row[count]
+                count += 1
+            elem = val
+            row[count-1] = "0"
+
+            val = "0"
+            count = 0
+            while(val == "0" or count < 4):
+                val = row[count]
+                count += 1
+
+            if (val == elem):
+                elem *= 2
+                row[count-1] = "0"
