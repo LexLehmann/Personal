@@ -1,0 +1,10 @@
+import math
+
+n = 10000000
+d = 0.0
+
+for num in range(n):
+    d+= n/(num+1)
+
+print(d)
+print(n * math.log(n))
