@@ -1,0 +1,23 @@
+from sys import stdin
+
+inputFile = open("votes.txt", "r")
+votes = []
+for line in inputFile:
+    vote = line.strip('\n').split(" ")
+    vote.append("0")
+    votes.append(vote)
+
+i = 0
+canadites = []
+for vote in votes[0]:
+    canadite = (i, 0, True)
+    i += 1
+    canadites.append(canadite)
+
+canadites.pop(len(canadites) - 1)
+print(canadites)
+
+for vote in votes:
+    minVal = 100
+    for rank in vote[-1]:
+
