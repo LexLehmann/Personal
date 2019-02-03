@@ -10,7 +10,7 @@ for line in inputFile:
 i = 0
 canadites = []
 for vote in votes[0]:
-    canadite = (i, 0, True)
+    canadite = [i, 0, True]
     i += 1
     canadites.append(canadite)
 
@@ -19,5 +19,18 @@ print(canadites)
 
 for vote in votes:
     minVal = 100
-    for rank in vote[-1]:
+    count = 0;
+    for rank in vote[:-1]:
+        if(int(rank) < int(minVal)):
+            minVal = rank
+            count = 1
+        elif(rank == minVal):
+            count += 1
+    print(count)
+    for i in range(len(vote) - 1):
+        if(vote[i] == minVal):
+            print(canadites[i])
+            canadites[i][1] = canadites[i][1] + 1/count
+            print(canadites[i])
 
+print(canadites)
