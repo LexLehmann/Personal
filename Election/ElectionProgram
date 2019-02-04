@@ -1,3 +1,42 @@
+def removeLowest():
+    minVotes = -1
+    for person in canadites():
+        if (minVotes == -1 or canadites[minVotes][1] > canadites[person][1]):
+            minVotes = person
+    canadites[minVotes][2] = False
+    canadites[minVotes][1] = 0
+
+    for voter in partyVoters[minVotes]:
+        count = 0
+        for vote in voter:
+            if (vote == voter[len(canadites) and canadites[voter.index(vote)]]):
+                count += 1
+
+        if(count != 0):
+            eachPiece = (1/(count + 1)) / count
+            for vote in voter:
+                if (vote == voter[len(canadites) and canadites[voter.index(vote)]]):
+                    canadites[voter.index(vote)][1] += eachPiece
+
+        else :
+            for vote in votes:
+                minVal = -1
+                count = 0;
+                for rank in vote[:-1]:
+                    if (minVal == -1 or int(rank) < int(minVal)):
+                        minVal = rank
+                        count = 1
+                    elif (rank == minVal):
+                        count += 1
+                for i in range(len(vote) - 1):
+                    if (vote[i] == minVal):
+                        canadites[i][1] = canadites[i][1] + 1 / count
+                        partyVoters[i].append(vote)
+                vote[len(canadites)] = minVal
+
+
+
+
 from sys import stdin
 
 inputFile = open("votes.txt", "r")
@@ -15,22 +54,26 @@ for vote in votes[0]:
     canadites.append(canadite)
 
 canadites.pop(len(canadites) - 1)
-print(canadites)
+partyVoters = []
+for i in range(len(canadites)):
+    partyVoters.append([])
 
 for vote in votes:
-    minVal = 100
+    minVal = -1
     count = 0;
     for rank in vote[:-1]:
-        if(int(rank) < int(minVal)):
+        if(minVal == -1 or int(rank) < int(minVal)):
             minVal = rank
             count = 1
         elif(rank == minVal):
             count += 1
-    print(count)
     for i in range(len(vote) - 1):
         if(vote[i] == minVal):
-            print(canadites[i])
             canadites[i][1] = canadites[i][1] + 1/count
-            print(canadites[i])
+            partyVoters[i].append(vote)
+    vote[len(canadites)] =  minVal
 
-print(canadites)
+print(partyVoters)
+
+removeLowest()
+
