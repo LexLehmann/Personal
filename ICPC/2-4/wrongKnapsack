@@ -1,0 +1,36 @@
+from sys import stdin
+import math
+
+file = open("knappy.txt")
+caseDone = False
+count = 0
+for line in file:
+    if count == 0:
+        caseInfo = line.strip('\n').split(" ")
+        weights = []
+        count = 1
+        print(caseInfo)
+    else:
+        fixedLine = line.strip('\n').split(" ")
+        weights.append(fixedLine)
+        print(weights)
+        count += 1
+        if count == int(caseInfo[1]) + 1:
+            maxM = []
+            maxM.append([])
+            for j in range(int(math.floor(float(caseInfo[0])))):
+                maxM[0].append(0)
+            for i in range(int(caseInfo[1])):
+                maxM.append([])
+                for j in range(int(math.floor(float(caseInfo[0])))):
+                    if int(weights[i][1]) < j:
+                        maxM[i+1].append(maxM[i][j])
+                    else:
+                        maxM[i+1].append(max(maxM[i][j], maxM[i][j-int(weights[i][1])] + int(weights[i][0])))
+            maxVal = 0
+            for i in range(int(caseInfo[1])):
+                for j in range(int(math.floor(float(caseInfo[0])))):
+                    if maxM[i][j] > maxVal:
+                        maxVal = maxM[i][j]
+            print(maxVal)
+            count = 0
