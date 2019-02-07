@@ -6,7 +6,6 @@ def removeLowest():
     canadites[minVotes][2] = False
     canadites[minVotes][1] = 0
 
-    print(partyVoters[minVotes])
     for voter in partyVoters[minVotes]:
         countOfTies = 0
         i = 0
@@ -43,6 +42,24 @@ def distributeNewVotes(voter):
             canadites[j][1] = canadites[j][1] + 1 / count
             partyVoters[j].append(voter)
 
+
+def elimination():
+    Seats = 1
+    electionDone = False
+    threshold = len(votes) / Seats
+
+    for canadite in canadites:
+        if canadite[1] >= threshold:
+            electionDone = True
+
+    while not electionDone:
+        removeLowest()
+        for canadite in canadites:
+            if canadite[1] >= threshold:
+                electionDone = True
+        print(canadites)
+
+
 from sys import stdin
 
 inputFile = open("votes.txt", "r")
@@ -65,7 +82,4 @@ for i in range(len(canadites)):
 for vote in votes:
         distributeNewVotes(vote)
 
-print(canadites)
-for num in range(5):
-    removeLowest()
-    print(canadites)
+elimination()
