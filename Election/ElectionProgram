@@ -24,23 +24,24 @@ def removeLowest():
                 i = i + 1
 
         else :
-            minVal = -1
-            count = 0
-            i = 0
-            for vote in voter:
-                if canadites[i][2] and (minVal == -1 or minVal > vote):
-                    minVal = vote
-                    count = 1
-                elif canadites[voter.index(vote)][2] and (minVal == -1 or minVal == vote):
-                    count += 1
-                i += 1
+            distributeNewVotes(voter);
 
-            for j in range(len(voter)):
-                if vote[i] == minVal:
-                    canadites[i][1] = canadites[i][1] + 1 / count
-                    partyVoters[i].append(vote)
+def distributeNewVotes(voter):
+    minVal = -1
+    count = 0
+    i = 0
+    for vote in voter:
+        if canadites[i][2] and (minVal == -1 or minVal > vote):
+            minVal = vote
+            count = 1
+        elif canadites[voter.index(vote)][2] and (minVal == -1 or minVal == vote):
+            count += 1
+        i += 1
 
-
+    for j in range(len(voter)):
+        if voter[j] == minVal:
+            canadites[j][1] = canadites[j][1] + 1 / count
+            partyVoters[j].append(voter)
 
 from sys import stdin
 
@@ -62,18 +63,7 @@ for i in range(len(canadites)):
     partyVoters.append([])
 
 for vote in votes:
-    minVal = -1
-    count = 0;
-    for rank in vote:
-        if minVal == -1 or int(rank) < int(minVal):
-            minVal = rank
-            count = 1
-        elif(rank == minVal):
-            count += 1
-    for i in range(len(vote)):
-        if vote[i] == minVal:
-            canadites[i][1] = canadites[i][1] + 1/count
-            partyVoters[i].append(vote)
+        distributeNewVotes(vote)
 
 print(canadites)
 for num in range(5):
