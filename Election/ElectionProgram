@@ -1,6 +1,7 @@
 def removeLowest():
     minVotes = -1
     for person in canadites:
+# Need other qualifiers for who to eliminate if the canadites are tied
         if (minVotes == -1 or person[1] < canadites[minVotes][1]) and person[2]:
             minVotes = canadites.index(person)
     canadites[minVotes][2] = False
@@ -38,7 +39,7 @@ def distributeNewVotes(voter):
         i += 1
 
     for j in range(len(voter)):
-        if voter[j] == minVal:
+        if voter[j] == minVal and canadites[j][2]:
             canadites[j][1] = canadites[j][1] + 1 / count
             partyVoters[j].append(voter)
 
@@ -80,6 +81,7 @@ for i in range(len(canadites)):
     partyVoters.append([])
 
 for vote in votes:
-        distributeNewVotes(vote)
+    distributeNewVotes(vote)
 
+print(canadites)
 elimination()
