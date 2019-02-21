@@ -6,7 +6,6 @@ def removeLowest():
             minVotes = canadites.index(person)
     canadites[minVotes][2] = False
     canadites[minVotes][1] = 0
-    print(len(partyVoters[minVotes]))
 
     for voter in partyVoters[minVotes]:
         countOfTies = 0
@@ -36,7 +35,7 @@ def distributeNewVotes(voter):
         if canadites[i][2] and (minVal == -1 or minVal > vote):
             minVal = vote
             count = 1
-        elif canadites[voter.index(vote)][2] and minVal == vote:
+        elif canadites[i][2] and minVal == vote:
             count += 1
         i += 1
     #print(numVotesPerPerson/count)
@@ -101,7 +100,7 @@ partyVoters = []
 for i in range(len(canadites)):
     partyVoters.append([])
 
-#canadites[1][2] = False
+canadites[1][2] = False
 
 for vote in votes:
     distributeNewVotes(vote)
