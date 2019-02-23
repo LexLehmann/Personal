@@ -1,0 +1,53 @@
+import java.util.Random;
+
+public class Testmaker {
+
+	public static void main(String[] args) {
+		Random rand = new Random();
+		int inputs = 10;
+		int[] rule = new int[inputs];
+		
+		for (int i = 0; i < rule.length; i++) {
+			rule[i] = rand.nextInt(3);
+			System.out.println(rule[i]);
+		}
+		
+		boolean[][] trainingData = new boolean[100][inputs+1];
+		
+		for (int instance = 0; instance < trainingData.length; instance++) {
+			boolean label = true;
+			for (int value = 0; value < trainingData[instance].length - 1; value++) {
+				trainingData[instance][value] = rand.nextBoolean();
+				if (rule[value] == 1 && trainingData[instance][value] || rule[value] == 2 && !trainingData[instance][value]) {
+					label = false;
+				}
+			}
+			trainingData[instance][inputs] = label;
+		}
+		
+		Perceptron percep = new Perceptron(inputs, 1);
+		boolean change = true;
+		
+		while (change) {
+			change = false;
+			
+			for (int i = 0; i < trainingData.length; i++) {
+				double[] data = new double[inputs];
+				for (int j = 0; j < inputs; j++) {
+					if (trainingData[i][j]) {
+						data[j] = 1;
+					} else {
+						data[j] = -1;
+					}
+				}
+				boolean label = trainingData[i][inputs];
+				boolean val = percep.TrainingExample(data, label);
+				if (val) {
+					change = true;
+				}
+			}
+		}
+		System.out.println("done");
+	}
+
+}
