@@ -38,9 +38,9 @@ public class Perceptron {
 			double direction = target - output;
 			for(int i = 0; i < data.length + 1; i++) {
 				if (i == 0) {
-					weights[i] = LEARNING_RATE * (direction) * 1;
+					weights[i] = weights[i] + LEARNING_RATE * (direction) * 1;
 				} else {
-					weights[i] = LEARNING_RATE * (direction) * data[i-1];
+					weights[i] = weights[i] + LEARNING_RATE * (direction) * data[i-1];
 				}
 			}
 		}
