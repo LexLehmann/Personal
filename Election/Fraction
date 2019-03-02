@@ -3,6 +3,16 @@ class Fraction:
         self.numer = num
         self.denom = de
 
+    def __str__(self):
+        return str(self.numer) + "/" + str(self.denom)
+
+    def __float__(self):
+        return self.numer/self.denom
+    
+    def __int__(self):
+        self.simplify()
+        return self.numer
+
     def simplify(self):
         num1 = self.numer
         num2 = self.denom
@@ -18,12 +28,6 @@ class Fraction:
             self.denom = self.denom*-1
         return Fraction(int(self.numer/ num2), int(self.denom/num2))
 
-    def __str__(self):
-        return str(self.numer) + "/" + str(self.denom)
-
-    def __float__(self):
-        return self.numer/self.denom
-
     def __sub__(self, other):
         if isinstance(other, Fraction):
             otherNumer = other.numer
@@ -38,6 +42,20 @@ class Fraction:
             self.numer = tempNumer*otherDenom
             otherNumer = otherNumer*tempDenom
         self.numer = self.numer - otherNumer
+        self = self.simplify()
+        return Fraction(self.numer, self.denom)
+
+    def __rsub__(self, other):
+        if isinstance(other, int):
+            otherNumer = other
+            otherDenom = 1
+        if (self.denom != otherDenom):
+            tempDenom = self.denom
+            tempNumer = self.numer
+            self.denom = tempDenom*otherDenom
+            self.numer = tempNumer*otherDenom
+            otherNumer = otherNumer*tempDenom
+        self.numer = otherNumer - self.numer
         self = self.simplify()
         return Fraction(self.numer, self.denom)
 
@@ -58,11 +76,32 @@ class Fraction:
         self = self.simplify()
         return Fraction(self.numer, self.denom)
 
+    def __radd__(self, other):
+        if isinstance(other, int):
+            otherNumer = other
+            otherDenom = 1
+        if (self.denom != otherDenom):
+            tempDenom = self.denom
+            tempNumer = self.numer
+            self.denom = tempDenom*otherDenom
+            self.numer = tempNumer*otherDenom
+            otherNumer = otherNumer*tempDenom
+        self.numer = self.numer + otherNumer
+        self = self.simplify()
+        return Fraction(self.numer, self.denom)
+
     def __mul__(self, other):
         if isinstance(other, Fraction):
             self.numer = self.numer*other.numer
             self.denom = self.denom*other.denom
         elif isinstance(other, int):
+            self.numer = self.numer*other
+
+        self = self.simplify()
+        return Fraction(self.numer, self.denom)
+
+    def __rmul__(self, other):
+        if isinstance(other, int):
             self.numer = self.numer*other
 
         self = self.simplify()
