@@ -1,0 +1,47 @@
+class Fraction:
+    def __init__(self, num, de):
+        self.numer = num
+        self.denom = de
+
+    def simplify(self):
+        num1 = self.numer
+        num2 = self.denom
+
+        num3 = num1%num2
+        while(num3 != 0):
+            num1 = num2
+            num2 = num3
+            num3 = num1%num2
+
+        return Fraction(int(self.numer/ num2), int(self.denom/num2))
+
+    def __str__(self):
+        return str(self.numer) + "/" + str(self.denom)
+
+
+    def __add__(self, other):
+        if (self.denom != other.denom):
+            tempDenom = self.denom
+            tempNumer = self.numer
+            self.denom = tempDenom*other.denom
+            self.numer = tempNumer*other.denom
+            other.denom = tempDenom*other.denom
+            other.numer = other.numer*tempDenom
+        self.numer = self.numer + other.numer
+        self = self.simplify()
+        return Fraction(self.numer, self.denom)
+
+    def __mul__(self, other):
+        self.numer = self.numer*other.numer
+        self.denom = self.denom*other.denom
+        self = self.simplify()
+        return Fraction(self.numer, self.denom)
+
+    def __truediv__(self, other):
+        self.numer = self.numer*other.denom
+        self.denom = self.denom*other.numer
+        self = self.simplify()
+        return Fraction(self.numer, self.denom)
+
+
+
