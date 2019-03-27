@@ -1,3 +1,5 @@
+from Fraction import Fraction
+
 def removeLowest():
     minVotes = -1
     for person in canadites:
@@ -5,68 +7,133 @@ def removeLowest():
         if (minVotes == -1 or person[1] < canadites[minVotes][1]) and person[2]:
             minVotes = canadites.index(person)
     canadites[minVotes][2] = False
-    canadites[minVotes][1] = 0
+    canadites[minVotes][1] = Fraction(0, 1)
 
-    for voter in partyVoters[minVotes]:
-        countOfTies = 0
-        i = 0
-        for choice in voter:
-            if choice == voter[minVotes] and canadites[i][2]:
-                countOfTies += 1
-            i += 1
+    canaditeCount = 0
+    for canadite in partyVoters:
+        if canaditeCount != minVotes:
+            for vote in partyVoters[canaditeCount]:
+                emptyList = 0
+                for rank in vote[0]:
+                    pos = 0
+                    for item in rank:
+                        if item == minVotes:
+                            rank.pop(pos)
+                            if len(vote[0][emptyList]) == 0:
+                                vote[0].pop(emptyList)
+                        pos += 1
+                    emptyList += 1
+        canaditeCount += 1
 
-        if countOfTies != 0:
-            eachPiece = (numVotesPerPerson/(countOfTies + 1)) / countOfTies
-            i = 0
-            #print(eachPiece)
-            for vote in voter:
-                if vote == voter[minVotes] and canadites[i][2]:
-                    canadites[i][1] += eachPiece
-                i = i + 1
+    for vote in partyVoters[minVotes]:
+        distributeNewVotes(vote[0], vote[1])
 
-        else :
-            distributeNewVotes(voter);
+def distributeNewVotes(voter, amount):
+    for vote in voter[0]:
+        newVote = []
+        for list in voter:
+            nextList = []
+            for item in list:
+                nextList.append(item)
+            newVote.append(nextList)
+        divs = len(newVote[0])
+        newVote[0].pop(newVote[0].index(vote))
 
-def distributeNewVotes(voter):
-    minVal = -1
+        if len(newVote[0]) == 0:
+            newVote.pop(0)
+
+        found, place = findCopy(newVote, vote)
+
+        #print(newVote, place, found, vote)
+        split = amount/divs
+        if found:
+            partyVoters[vote][place - 1][1] += split
+            canadites[vote][1] += split
+        else:
+            all = [newVote, split]
+            partyVoters[vote].insert(place, all)
+            canadites[vote][1] += split
+        #print(partyVoters[vote])
+
+def findCopy(vote, canaditeList):
     count = 0
-    i = 0
-    for vote in voter:
-        if canadites[i][2] and (minVal == -1 or minVal > vote):
-            minVal = vote
-            count = 1
-        elif canadites[i][2] and minVal == vote:
+    notPassed = True
+    equal = False
+    if len(partyVoters[canaditeList]) > 0:
+        while(notPassed):
+            if count >= len(partyVoters[canaditeList]) or len(vote) == 0 or len(vote[0]) > len(partyVoters[canaditeList][count][0][0]):
+                notPassed = False
+                #print("test")
+            elif(len(vote[0]) == len(partyVoters[canaditeList][count][0][0])):
+                i = 0
+                equal = True
+                for rank in vote:
+                    if(len(rank) == len(partyVoters[canaditeList][count][0][i])):
+                        j = 0
+                        for item in rank:
+                            if (item != partyVoters[canaditeList][count][0][i][j]):
+                                equal = False
+                            j += 1
+                    else:
+                        equal = False
+                    i += 1
+                if equal:
+                    notPassed = False
             count += 1
-        i += 1
-    #print(numVotesPerPerson/count)
-    for j in range(len(voter)):
-        if voter[j] == minVal and canadites[j][2]:
-            canadites[j][1] = canadites[j][1] + numVotesPerPerson / count
-            partyVoters[j].append(voter)
+    else:
+        equal = False
+        count = 1
+
+    return equal, count-1
+
+def cutTop(threshold):
+    maxVotes = 0
+    for canadite in canadites:
+        if canadite[1] > maxVotes:
+            maxVotes = canadite[1]
+
+    print(maxVotes)
+
+    while maxVotes >= threshold + Fraction(1, 10000):
+        toDistribute = []
+        for canadite in canadites:
+            if canadite[1] > threshold:
+                amountStaying = threshold/canadite[1]
+                print(amountStaying)
+                for vote in partyVoters[canadite[0]]:
+                    var = vote[1]*amountStaying
+                    newVote = [vote[0], vote[1]-var]
+                    vote[1] = var
+                    canadite[1] -= newVote[1]
+                    toDistribute.append(newVote)
+
+        for item in toDistribute:
+            print(item)
+            distributeNewVotes(item[0], item[1])
+
+        maxVotes = 0
+        for canadite in canadites:
+            if canadite[1] > maxVotes:
+                maxVotes = canadite[1]
+
+        print(maxVotes)
+
+
 
 
 def elimination():
-    Seats = 1
+    Seats = 3
     electionDone = False
-    threshold = len(votes)*numVotesPerPerson / Seats
+    threshold = Fraction(len(votes), Seats)
+    canaditesLeft = len(canadites)
 
-    for canadite in canadites:
-        if canadite[1] >= threshold:
-            electionDone = True
+    while canaditesLeft > Seats:
+        cutTop(threshold)
 
-    while not electionDone:
         removeLowest()
-        totalVotes = 0
+        canaditesLeft -= 1
 
-        for canadite in canadites:
-            totalVotes += canadite[1]
-        print(totalVotes)
-
-        for canadite in canadites:
-            if canadite[1] >= threshold:
-                electionDone = True
         print(canadites)
-
 
 from sys import stdin
 
@@ -79,31 +146,40 @@ for line in inputFile:
 i = 0
 canadites = []
 for vote in votes[0]:
-    canadite = [i, 0, True]
+    canadite = [i, Fraction(0,1), True]
     i += 1
     canadites.append(canadite)
 
-numVotesPerPerson = 1
-for i in range(len(votes[0])):
-    if i > 0 and numVotesPerPerson % (i) != 0:
-        increaseBy = i
-        for j in range(i):
-            if j > 0 and i % (j) == 0:
-                increaseBy /= (j)
-        while increaseBy % 2 == 0:
-            increaseBy /= 2
-        numVotesPerPerson *= increaseBy
+ranks = []
 
-print(numVotesPerPerson)
+for voter in votes:
+    thisRank = []
+    added = 0
+    previous = 0
+    while added < len(canadites):
+        minChoice = 100000000
+        for vote in voter:
+            if int(vote) < minChoice and int(vote) > previous:
+                minChoice = int(vote)
+        tied = []
+        i = 0
+        for vote in voter:
+            if int(vote) == minChoice:
+                tied.append(i)
+            i += 1
+        thisRank.append(tied)
+        previous = minChoice
+        added += len(tied)
+    ranks.append(thisRank)
+
+print(ranks)
 
 partyVoters = []
 for i in range(len(canadites)):
     partyVoters.append([])
 
-canadites[1][2] = False
+for voter in ranks:
+    distributeNewVotes(voter, Fraction(1,1))
 
-for vote in votes:
-    distributeNewVotes(vote)
 
-print(canadites)
 elimination()
