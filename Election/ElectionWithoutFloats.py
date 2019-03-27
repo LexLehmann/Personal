@@ -47,13 +47,12 @@ def distributeNewVotes(voter, amount):
         #print(newVote, place, found, vote)
         split = amount/divs
         if found:
-            partyVoters[vote][place - 1][1] += split
+            partyVoters[vote][place][1] += split
             canadites[vote][1] += split
         else:
             all = [newVote, split]
             partyVoters[vote].insert(place, all)
             canadites[vote][1] += split
-        #print(partyVoters[vote])
 
 def findCopy(vote, canaditeList):
     count = 0
@@ -95,21 +94,29 @@ def cutTop(threshold):
     print(maxVotes)
 
     while maxVotes >= threshold + Fraction(1, 10000):
+        print(canadites)
+        print(partyVoters)
         toDistribute = []
         for canadite in canadites:
             if canadite[1] > threshold:
                 amountStaying = threshold/canadite[1]
                 print(amountStaying)
                 for vote in partyVoters[canadite[0]]:
+                    print(vote[1])
                     var = vote[1]*amountStaying
                     newVote = [vote[0], vote[1]-var]
                     vote[1] = var
+                    print(vote[1])
                     canadite[1] -= newVote[1]
                     toDistribute.append(newVote)
+
+        print(partyVoters)
 
         for item in toDistribute:
             print(item)
             distributeNewVotes(item[0], item[1])
+
+        print(partyVoters)
 
         maxVotes = 0
         for canadite in canadites:
@@ -122,7 +129,7 @@ def cutTop(threshold):
 
 
 def elimination():
-    Seats = 3
+    Seats = 5
     electionDone = False
     threshold = Fraction(len(votes), Seats)
     canaditesLeft = len(canadites)
