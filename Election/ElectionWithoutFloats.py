@@ -63,7 +63,7 @@ def findCopy(vote, canaditeList):
             if count >= len(partyVoters[canaditeList]) or len(vote) == 0 or len(vote[0]) > len(partyVoters[canaditeList][count][0][0]):
                 notPassed = False
                 #print("test")
-            elif(len(vote[0]) == len(partyVoters[canaditeList][count][0][0])):
+            elif(len(vote[0]) == len(partyVoters[canaditeList][count][0][0]) and len(vote) == len(partyVoters[canaditeList][count][0])):
                 i = 0
                 equal = True
                 for rank in vote:
@@ -91,39 +91,28 @@ def cutTop(threshold):
         if canadite[1] > maxVotes:
             maxVotes = canadite[1]
 
-    print(maxVotes)
 
     while maxVotes >= threshold + Fraction(1, 10000):
-        print(canadites)
-        print(partyVoters)
         toDistribute = []
         for canadite in canadites:
             if canadite[1] > threshold:
                 amountStaying = threshold/canadite[1]
-                print(amountStaying)
                 for vote in partyVoters[canadite[0]]:
-                    print(vote[1])
                     var = vote[1]*amountStaying
                     newVote = [vote[0], vote[1]-var]
                     vote[1] = var
-                    print(vote[1])
                     canadite[1] -= newVote[1]
                     toDistribute.append(newVote)
 
-        print(partyVoters)
-
         for item in toDistribute:
-            print(item)
             distributeNewVotes(item[0], item[1])
-
-        print(partyVoters)
 
         maxVotes = 0
         for canadite in canadites:
             if canadite[1] > maxVotes:
                 maxVotes = canadite[1]
 
-        print(maxVotes)
+        print(canadites)
 
 
 
@@ -179,14 +168,18 @@ for voter in votes:
         added += len(tied)
     ranks.append(thisRank)
 
-print(ranks)
-
 partyVoters = []
 for i in range(len(canadites)):
     partyVoters.append([])
 
+i = 0
 for voter in ranks:
     distributeNewVotes(voter, Fraction(1,1))
+    if i > 1000:
+        print("working")
+        i = 0
+    i += 1
 
+print("blarg")
 
 elimination()
